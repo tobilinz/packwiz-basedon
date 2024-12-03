@@ -16,11 +16,12 @@ import (
 
 // Pack stores the modpack metadata, usually in pack.toml
 type Pack struct {
-	Name        string `toml:"name"`
-	Author      string `toml:"author,omitempty"`
-	Version     string `toml:"version,omitempty"`
-	Description string `toml:"description,omitempty"`
-	PackFormat  string `toml:"pack-format"`
+	Name        string  `toml:"name"`
+	Author      string  `toml:"author,omitempty"`
+	Version     string  `toml:"version,omitempty"`
+	Description string  `toml:"description,omitempty"`
+	PackFormat  string  `toml:"pack-format"`
+	BasedOn     BasedOn `toml:"based-on,omitempty"`
 	Index       struct {
 		// Path is stored in forward slash format relative to pack.toml
 		File       string `toml:"file"`
@@ -30,6 +31,17 @@ type Pack struct {
 	Versions map[string]string                 `toml:"versions"`
 	Export   map[string]map[string]interface{} `toml:"export"`
 	Options  map[string]interface{}            `toml:"options"`
+	SavePath string                            `toml:"-"`
+}
+
+type BasedOn struct {
+	Type         string            `toml:"type"`
+	Info         map[string]string `toml:"source"`
+	PackLocation string            `toml:"pack-location,omitempty"`
+}
+
+type ZipSource struct {
+	url string
 }
 
 const CurrentPackFormat = "packwiz:1.1.0"
@@ -47,10 +59,21 @@ func mustParseConstraint(s string) *semver.Constraints {
 
 // LoadPack loads the modpack metadata to a Pack struct
 func LoadPack() (Pack, error) {
-	var modpack Pack
-	if _, err := toml.DecodeFile(viper.GetString("pack-file"), &modpack); err != nil {
+	return LoadAnyPack(viper.GetString("pack-file"), true)
+}
+
+func LoadAnyPack(savePath string, loadOptions bool) (Pack, error) {
+	savePath, err := filepath.Abs(savePath)
+	if err != nil {
 		return Pack{}, err
 	}
+
+	var modpack Pack
+	if _, err := toml.DecodeFile(savePath, &modpack); err != nil {
+		return Pack{}, err
+	}
+
+	modpack.SavePath = savePath
 
 	// Check pack-format
 	if len(modpack.PackFormat) == 0 {
@@ -78,7 +101,7 @@ func LoadPack() (Pack, error) {
 	// TODO: suggest migration if necessary (primarily for 2.0.0)
 
 	// Read options into viper
-	if modpack.Options != nil {
+	if modpack.Options != nil && loadOptions {
 		err := viper.MergeConfigMap(modpack.Options)
 		if err != nil {
 			return Pack{}, err
@@ -93,15 +116,38 @@ func LoadPack() (Pack, error) {
 
 // LoadIndex attempts to load the index file of this modpack
 func (pack Pack) LoadIndex() (Index, error) {
-	if filepath.IsAbs(pack.Index.File) {
-		return LoadIndex(pack.Index.File)
+	path := pack.Index.File
+
+	if !filepath.IsAbs(path) {
+		path = filepath.Join(filepath.Dir(pack.SavePath), filepath.FromSlash(pack.Index.File))
 	}
-	fileNative := filepath.FromSlash(pack.Index.File)
-	return LoadIndex(filepath.Join(filepath.Dir(viper.GetString("pack-file")), fileNative))
+
+	// Decode as indexTomlRepresentation then convert to Index
+	var rep indexTomlRepresentation
+	if _, err := toml.DecodeFile(path, &rep); err != nil {
+		return Index{}, err
+	}
+	if len(rep.HashFormat) == 0 {
+		rep.HashFormat = "sha256"
+	}
+
+	index := Index{
+		HashFormat: rep.HashFormat,
+		Files:      rep.Files.toMemoryRep(),
+		indexFile:  path,
+		pack:       &pack,
+	}
+
+	return index, nil
+}
+
+func (pack *Pack) GetRootPath() string {
+	return filepath.Dir(pack.SavePath)
 }
 
 // UpdateIndexHash recalculates the hash of the index file of this modpack
 func (pack *Pack) UpdateIndexHash() error {
+	//TODO: might break stuff when pack.SavePath is not this pack
 	if viper.GetBool("no-internal-hashes") {
 		pack.Index.HashFormat = "sha256"
 		pack.Index.Hash = ""
@@ -109,7 +155,7 @@ func (pack *Pack) UpdateIndexHash() error {
 	}
 
 	fileNative := filepath.FromSlash(pack.Index.File)
-	indexFile := filepath.Join(filepath.Dir(viper.GetString("pack-file")), fileNative)
+	indexFile := filepath.Join(filepath.Dir(pack.SavePath), fileNative)
 
 	f, err := os.Open(indexFile)
 	if err != nil {
@@ -137,7 +183,7 @@ func (pack *Pack) UpdateIndexHash() error {
 
 // Write saves the pack file
 func (pack Pack) Write() error {
-	f, err := os.Create(viper.GetString("pack-file"))
+	f, err := os.Create(pack.SavePath)
 	if err != nil {
 		return err
 	}

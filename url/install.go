@@ -91,7 +91,7 @@ var installCmd = &cobra.Command{
 		if destPathName == "" {
 			destPathName = core.SlugifyName(args[0])
 		}
-		destPath := modMeta.SetMetaPath(filepath.Join(viper.GetString("meta-folder-base"), folder,
+		destPath := modMeta.SetMetaPath(filepath.Join(pack.GetRootPath(), folder,
 			destPathName+core.MetaExtension))
 
 		format, hash, err := modMeta.Write()

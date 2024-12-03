@@ -161,6 +161,7 @@ var defaultFolders = map[uint32]map[uint32]string{
 }
 
 func getPathForFile(gameID uint32, classID uint32, categoryID uint32, slug string) string {
+	//BUG: This will cause a crash if viper.GetString("meta-folder-base") is not replace with pack.GetRootPath()
 	metaFolder := viper.GetString("meta-folder")
 	if metaFolder == "" {
 		if m, ok := defaultFolders[gameID]; ok {

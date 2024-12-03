@@ -145,6 +145,7 @@ var initCmd = &cobra.Command{
 			Author:     author,
 			Version:    version,
 			PackFormat: core.CurrentPackFormat,
+			BasedOn:    core.BasedOn{},
 			Index: struct {
 				File       string `toml:"file"`
 				HashFormat string `toml:"hash-format"`

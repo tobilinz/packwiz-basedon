@@ -1,0 +1,77 @@
+package core
+
+import (
+	"fmt"
+	"os"
+	"path"
+)
+
+func getCacheDir() string {
+	cache, err := os.UserCacheDir()
+	if err != nil {
+		fmt.Println("An error occured while trying to get the system cache directory path")
+		os.Exit(1)
+	}
+
+	cacheDir := path.Join(cache, "packwiz")
+	cacheDirStat, err := os.Stat(cacheDir)
+
+	if !os.IsNotExist(err) {
+		fmt.Println("An error occured while trying to get information about the cache directory")
+		os.Exit(1)
+	}
+
+	createDir := err != nil
+	if err == nil && !cacheDirStat.IsDir() {
+		fmt.Println("There is a cache file with the same name as the cache dir should have. Attempting to remove it...")
+		err = os.Remove(cacheDir)
+		if err != nil {
+			fmt.Println("An error occured while trying to remove the file")
+			os.Exit(1)
+		}
+		createDir = true
+	}
+
+	if createDir {
+		err = os.Mkdir(cacheDir, 0755)
+		if err != nil {
+			fmt.Println("An error occured while trying to create the cache directory")
+			os.Exit(1)
+		}
+	}
+
+	pack, err := LoadPack()
+	if err != nil {
+		fmt.Println("An error occurred while trying to load pack:", err)
+		os.Exit(1)
+	}
+
+	projectCacheDir := path.Join(cacheDir, pack.Author+"_"+pack.Name)
+	projectCacheDirStat, err := os.Stat(projectCacheDir)
+
+	if !os.IsNotExist(err) {
+		fmt.Println("An error occured while trying to get information about the cache directory")
+		os.Exit(1)
+	}
+
+	createDir = err != nil
+	if err == nil && !projectCacheDirStat.IsDir() {
+		fmt.Println("There is a cache file with the same name as the cache dir should have. Attempting to remove it...")
+		err = os.Remove(projectCacheDir)
+		if err != nil {
+			fmt.Println("An error occured while trying to remove the file")
+			os.Exit(1)
+		}
+		createDir = true
+	}
+
+	if createDir {
+		err = os.Mkdir(projectCacheDir, 0755)
+		if err != nil {
+			fmt.Println("An error occured while trying to create the cache directory")
+			os.Exit(1)
+		}
+	}
+
+	return projectCacheDir
+}

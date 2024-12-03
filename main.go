@@ -2,6 +2,7 @@ package main
 
 import (
 	// Modules of packwiz
+	_ "github.com/packwiz/packwiz/basedon"
 	"github.com/packwiz/packwiz/cmd"
 	_ "github.com/packwiz/packwiz/curseforge"
 	_ "github.com/packwiz/packwiz/migrate"

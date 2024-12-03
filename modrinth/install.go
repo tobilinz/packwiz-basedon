@@ -1,15 +1,16 @@
 package modrinth
 
 import (
-	modrinthApi "codeberg.org/jmansfield/go-modrinth/modrinth"
 	"errors"
 	"fmt"
-	"github.com/packwiz/packwiz/cmdshared"
-	"github.com/spf13/viper"
-	"golang.org/x/exp/slices"
 	"os"
 	"path/filepath"
 	"strings"
+
+	modrinthApi "codeberg.org/jmansfield/go-modrinth/modrinth"
+	"github.com/packwiz/packwiz/cmdshared"
+	"github.com/spf13/viper"
+	"golang.org/x/exp/slices"
 
 	"github.com/packwiz/packwiz/core"
 	"github.com/spf13/cobra"
@@ -438,9 +439,9 @@ func createFileMeta(project *modrinthApi.Project, version *modrinthApi.Version, 
 		}
 	}
 	if project.Slug != nil {
-		path = modMeta.SetMetaPath(filepath.Join(viper.GetString("meta-folder-base"), folder, *project.Slug+core.MetaExtension))
+		path = modMeta.SetMetaPath(filepath.Join(pack.GetRootPath(), folder, *project.Slug+core.MetaExtension))
 	} else {
-		path = modMeta.SetMetaPath(filepath.Join(viper.GetString("meta-folder-base"), folder, core.SlugifyName(*project.Title)+core.MetaExtension))
+		path = modMeta.SetMetaPath(filepath.Join(pack.GetRootPath(), folder, core.SlugifyName(*project.Title)+core.MetaExtension))
 	}
 
 	// If the file already exists, this will overwrite it!!!

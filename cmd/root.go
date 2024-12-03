@@ -33,6 +33,10 @@ func Add(newCommand *cobra.Command) {
 	rootCmd.AddCommand(newCommand)
 }
 
+func GetRootFlag(name string) *pflag.Flag {
+	return rootCmd.PersistentFlags().Lookup(name)
+}
+
 func init() {
 	cobra.OnInitialize(initConfig)
 

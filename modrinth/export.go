@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"encoding/json"
 	"fmt"
+	"github.com/packwiz/packwiz/basedon"
 	"github.com/packwiz/packwiz/cmdshared"
 	"github.com/spf13/viper"
 	"golang.org/x/exp/slices"
@@ -22,12 +23,11 @@ var exportCmd = &cobra.Command{
 	Short: "Export the current modpack into a .mrpack for Modrinth",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
+
+		fmt.Println("Merging modpacks...")
+		pack := basedon.MergePacks()
+
 		fmt.Println("Loading modpack...")
-		pack, err := core.LoadPack()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
 		index, err := pack.LoadIndex()
 		if err != nil {
 			fmt.Println(err)
@@ -173,6 +173,9 @@ var exportCmd = &cobra.Command{
 				}
 			}
 		}
+
+		fmt.Println("Finalizing...")
+
 		// sort by `path` property before serialising to ensure reproducibility
 		sort.Slice(manifestFiles, func(i, j int) bool {
 			return manifestFiles[i].Path < manifestFiles[j].Path

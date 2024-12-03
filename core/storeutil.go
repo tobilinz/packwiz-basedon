@@ -66,3 +66,24 @@ func GetPackwizCache() (string, error) {
 	}
 	return filepath.Join(localStore, "cache"), nil
 }
+
+func GetProjectCache() (string, error) {
+	cache, err := GetPackwizCache()
+	if err != nil {
+		return "", err
+	}
+
+	pack, err := LoadPack()
+	if err != nil {
+		return "", err
+	}
+
+	cachePath := filepath.Join(cache, pack.GetPackName())
+
+	err = os.MkdirAll(cachePath, 0755)
+	if err != nil {
+		return "", err
+	}
+
+	return cachePath, nil
+}

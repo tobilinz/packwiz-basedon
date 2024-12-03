@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	gitignore "github.com/sabhiram/go-gitignore"
 	"github.com/spf13/viper"
 	"github.com/vbauerster/mpb/v4"
 	"github.com/vbauerster/mpb/v4/decor"
@@ -22,32 +21,13 @@ type Index struct {
 	HashFormat string
 	Files      IndexFiles
 	indexFile  string
-	packRoot   string
+	pack       *Pack
 }
 
 // indexTomlRepresentation is the TOML representation of Index (Files must be converted)
 type indexTomlRepresentation struct {
 	HashFormat string                       `toml:"hash-format"`
 	Files      indexFilesTomlRepresentation `toml:"files"`
-}
-
-// LoadIndex attempts to load the index file from a path
-func LoadIndex(indexFile string) (Index, error) {
-	// Decode as indexTomlRepresentation then convert to Index
-	var rep indexTomlRepresentation
-	if _, err := toml.DecodeFile(indexFile, &rep); err != nil {
-		return Index{}, err
-	}
-	if len(rep.HashFormat) == 0 {
-		rep.HashFormat = "sha256"
-	}
-	index := Index{
-		HashFormat: rep.HashFormat,
-		Files:      rep.Files.toMemoryRep(),
-		indexFile:  indexFile,
-		packRoot:   filepath.Dir(indexFile),
-	}
-	return index, nil
 }
 
 // RemoveFile removes a file from the index, given a file path
@@ -116,52 +96,17 @@ func (in *Index) updateFile(path string) error {
 
 // ResolveIndexPath turns a path from the index into a file path on disk
 func (in Index) ResolveIndexPath(p string) string {
-	return filepath.Join(in.packRoot, filepath.FromSlash(p))
+	return filepath.Join(in.pack.GetRootPath(), filepath.FromSlash(p))
 }
 
 // RelIndexPath turns a file path on disk into a path from the index
 func (in Index) RelIndexPath(p string) (string, error) {
-	rel, err := filepath.Rel(in.packRoot, p)
+	//FIXME: here
+	rel, err := filepath.Rel(in.pack.GetRootPath(), p)
 	if err != nil {
 		return "", err
 	}
 	return filepath.ToSlash(rel), nil
-}
-
-var ignoreDefaults = []string{
-	// Defaults (can be overridden with a negating pattern preceded with !)
-
-	// Exclude Git metadata
-	".git/**",
-	".gitattributes",
-	".gitignore",
-
-	// Exclude macOS metadata
-	".DS_Store",
-
-	// Exclude exported CurseForge zip files
-	"/*.zip",
-
-	// Exclude exported Modrinth packs
-	"*.mrpack",
-
-	// Exclude packwiz binaries, if the user puts them in their pack folder
-	"packwiz.exe",
-	"packwiz", // Note: also excludes packwiz/ as a directory - you can negate this pattern if you want a directory called packwiz
-}
-
-func readGitignore(path string) (*gitignore.GitIgnore, bool) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		// TODO: check for read errors (and present them)
-		return gitignore.CompileIgnoreLines(ignoreDefaults...), false
-	}
-
-	s := strings.Split(string(data), "\n")
-	var lines []string
-	lines = append(lines, ignoreDefaults...)
-	lines = append(lines, s...)
-	return gitignore.CompileIgnoreLines(lines...), true
 }
 
 // Refresh updates the hashes of all the files in the index, and adds new files to the index
@@ -169,47 +114,8 @@ func (in *Index) Refresh() error {
 	// TODO: If needed, multithreaded hashing
 	// for i := 0; i < runtime.NumCPU(); i++ {}
 
-	// Is case-sensitivity a problem?
-	pathPF, _ := filepath.Abs(viper.GetString("pack-file"))
-	pathIndex, _ := filepath.Abs(in.indexFile)
-
-	pathIgnore, _ := filepath.Abs(filepath.Join(in.packRoot, ".packwizignore"))
-	ignore, ignoreExists := readGitignore(pathIgnore)
-
 	var fileList []string
-	err := filepath.WalkDir(in.packRoot, func(path string, info os.DirEntry, err error) error {
-		if err != nil {
-			// TODO: Handle errors on individual files properly
-			return err
-		}
-
-		// Never ignore pack root itself (gitignore doesn't allow ignoring the root)
-		if path == in.packRoot {
-			return nil
-		}
-
-		if info.IsDir() {
-			// Don't traverse ignored directories (consistent with Git handling of ignored dirs)
-			if ignore.MatchesPath(path) {
-				return fs.SkipDir
-			}
-			// Don't add directories to the file list
-			return nil
-		}
-		// Exit if the files are the same as the pack/index files
-		absPath, _ := filepath.Abs(path)
-		if absPath == pathPF || absPath == pathIndex {
-			return nil
-		}
-		if ignoreExists {
-			if absPath == pathIgnore {
-				return nil
-			}
-		}
-		if ignore.MatchesPath(path) {
-			return nil
-		}
-
+	err := ProcessPackDir(in.pack, func(path string, info fs.DirEntry, relPath string) error {
 		fileList = append(fileList, path)
 		return nil
 	})
