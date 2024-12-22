@@ -24,7 +24,7 @@ var baseMergers = []*Merger{json, options, properties, toml}
 var mergers = append([]*Merger{fabricLoaderDependencies}, baseMergers...)
 
 func Merge(mergedProjectPath string, basePack *core.Pack, thisPack *core.Pack) {
-	sources := make(map[string]string)
+	attributions := make(map[string]string)
 
 	err := copyDirectories(mergedProjectPath, basePack, func(path string, info os.DirEntry, relPath string) error {
 		base, err := os.Open(path)
@@ -49,7 +49,7 @@ func Merge(mergedProjectPath string, basePack *core.Pack, thisPack *core.Pack) {
 		if err != nil {
 			return err
 		}
-		sources[relPath] = source
+		attributions[relPath] = source
 
 		return nil
 	})
@@ -75,7 +75,7 @@ func Merge(mergedProjectPath string, basePack *core.Pack, thisPack *core.Pack) {
 			if err != nil {
 				return err
 			}
-			sources[relPath] = source
+			attributions[relPath] = source
 
 			return nil
 		}
@@ -111,7 +111,7 @@ func Merge(mergedProjectPath string, basePack *core.Pack, thisPack *core.Pack) {
 		if err != nil {
 			return err
 		}
-		sources[relPath] = source
+		attributions[relPath] = source
 
 		return nil
 	})
@@ -121,22 +121,22 @@ func Merge(mergedProjectPath string, basePack *core.Pack, thisPack *core.Pack) {
 	}
 
 	//TODO: Base modpack (or this modpack) might have changed source manually in source.md. Respect that
-	sourcesList := "| Filepath Relative to This Directory | Source URL or Author Name |\n|--------|--------|\n"
+	attributionsList := "| Filepath Relative to This Directory | Source URL or Author Name |\n|--------|--------|\n"
 
-	for path, source := range sources {
-		sourcesList += fmt.Sprintf("| %s | %s |\n", path, source)
+	for path, source := range attributions {
+		attributionsList += fmt.Sprintf("| %s | %s |\n", path, source)
 	}
 
-	sourcesList += fmt.Sprintf("\n*%s by %s is based on %s by %s.*", thisPack.Name, thisPack.Author, basePack.Name, basePack.Author)
+	attributionsList += fmt.Sprintf("\n*%s by %s is based on %s by %s.*", thisPack.Name, thisPack.Author, basePack.Name, basePack.Author)
 
-	file, err := os.Create(filepath.Join(mergedProjectPath, "SOURCES.md"))
+	file, err := os.Create(filepath.Join(mergedProjectPath, "ATTRIBUTIONS.md"))
 	if err != nil {
 		println("failed to create file: %w", err)
 		os.Exit(1)
 	}
 	defer file.Close()
 
-	_, err = file.WriteString(sourcesList)
+	_, err = file.WriteString(attributionsList)
 	if err != nil {
 		println("failed to write to file: %w", err)
 		os.Exit(1)
