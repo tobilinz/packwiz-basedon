@@ -120,7 +120,7 @@ func Merge(mergedProjectPath string, basePack *core.Pack, thisPack *core.Pack) {
 		os.Exit(1)
 	}
 
-	//TODO: Base modpack (or this modpack) might have changed source manually in source.md. Respect that
+	//TODO: Base modpack (or this modpack) might have changed source manually in ATTRIBUTIONS.md. Respect that
 	attributionsList := "| Filepath Relative to This Directory | Source URL or Author Name |\n|--------|--------|\n"
 
 	for path, source := range attributions {
