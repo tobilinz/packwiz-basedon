@@ -13,6 +13,7 @@ func Resolve(sourceType string, source map[string]string) {
 		err := Http(source)
 		if err != nil {
 			fmt.Println("An error occured while trying to resolve the base pack.", err.Error())
+			os.Exit(1)
 		}
 	default:
 		fmt.Println("Cannot parse a base modpack with source of type ", sourceType)
