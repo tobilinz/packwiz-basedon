@@ -2,6 +2,7 @@ package resolver
 
 import (
 	"archive/zip"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -50,17 +51,15 @@ func init() {
 	httpCommand.AddCommand(zipCommand)
 }
 
-func Http(info map[string]string) {
+func Http(info map[string]string) error {
 	switch info["filetype"] {
 	case "zip":
-		getZip(info["url"])
-		break
+		return getZip(info["url"])
 	case "directory":
 		//TODO:
-		break
+		return nil
 	default:
-		fmt.Println("Filetype ", info["filetype"], " is not supported by https.")
-		break
+		return errors.New("Filetype " + info["filetype"] + " is not supported by https.")
 	}
 }
 

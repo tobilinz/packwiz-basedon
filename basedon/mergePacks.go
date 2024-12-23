@@ -26,6 +26,7 @@ func MergePacks() core.Pack {
 		os.Exit(1)
 	}
 
+	fmt.Println("Resolving base pack...")
 	resolver.Resolve(thisPack.BasedOn.Type, thisPack.BasedOn.Info)
 
 	basePath := filepath.Join(cachePath, "base", filepath.Dir(thisPack.BasedOn.PackLocation))
@@ -35,6 +36,7 @@ func MergePacks() core.Pack {
 		os.Exit(1)
 	}
 
+	fmt.Println("Merging this and base...")
 	mergedPath := filepath.Join(cachePath, "merged")
 
 	err = os.RemoveAll(mergedPath)
