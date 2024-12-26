@@ -29,7 +29,7 @@ var zipCommand = &cobra.Command{
 
 		pack, err := core.LoadPack()
 		if err != nil {
-			fmt.Println("An error occurred while trying to load pack:", err)
+			fmt.Println("An error occurred while trying to load pack:", err.Error())
 			os.Exit(1)
 		}
 
@@ -41,7 +41,7 @@ var zipCommand = &cobra.Command{
 
 		err = pack.Write()
 		if err != nil {
-			fmt.Println("An error occurred while trying to write pack:", err)
+			fmt.Println("An error occurred while trying to write pack:", err.Error())
 			os.Exit(1)
 		}
 	},

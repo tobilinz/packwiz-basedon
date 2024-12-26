@@ -131,14 +131,14 @@ func Merge(mergedProjectPath string, basePack *core.Pack, thisPack *core.Pack) {
 
 	file, err := os.Create(filepath.Join(mergedProjectPath, "ATTRIBUTIONS.md"))
 	if err != nil {
-		println("failed to create file: %w", err)
+		println("failed to create file:", err)
 		os.Exit(1)
 	}
 	defer file.Close()
 
 	_, err = file.WriteString(attributionsList)
 	if err != nil {
-		println("failed to write to file: %w", err)
+		println("failed to write to file:", err.Error())
 		os.Exit(1)
 	}
 }

@@ -22,7 +22,7 @@ func MergePacks() core.Pack {
 
 	thisPack, err := core.LoadPack()
 	if err != nil {
-		fmt.Println("Error loading pack:", err)
+		fmt.Println("Error loading pack:", err.Error())
 		os.Exit(1)
 	}
 
@@ -32,7 +32,7 @@ func MergePacks() core.Pack {
 	basePath := filepath.Join(cachePath, "base", filepath.Dir(thisPack.BasedOn.PackLocation))
 	basePack, err := core.LoadAnyPack(filepath.Join(basePath, filepath.Base(thisPack.BasedOn.PackLocation)), false)
 	if err != nil {
-		fmt.Println("Error loading pack:", err)
+		fmt.Println("Error loading pack:", err.Error())
 		os.Exit(1)
 	}
 
@@ -41,7 +41,7 @@ func MergePacks() core.Pack {
 
 	err = os.RemoveAll(mergedPath)
 	if err != nil {
-		fmt.Println("Failed to unzip the base modpack ", err)
+		fmt.Println("Failed to unzip the base modpack", err.Error())
 		os.Exit(1)
 	}
 

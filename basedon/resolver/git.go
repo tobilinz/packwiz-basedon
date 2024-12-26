@@ -19,7 +19,7 @@ func Git(uri string, destination string) {
 		fmt.Println("The specified URL does not lead to a git repository.")
 		os.Exit(1)
 	default:
-		fmt.Println("Error cloning repository:", err)
+		fmt.Println("Error cloning repository:", err.Error())
 		os.Exit(1)
 	}
 }
